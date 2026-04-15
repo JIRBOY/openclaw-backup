@@ -24,6 +24,9 @@ openclaw_backup.exe --dry-run
 # Custom config file
 openclaw_backup.exe --config D:\path\to\openclaw_backup.xml
 
+# Default config location (Windows)
+%APPDATA%\OpenClaw_Backup\openclaw_backup.xml
+
 # Show help
 openclaw_backup.exe --help
 ```

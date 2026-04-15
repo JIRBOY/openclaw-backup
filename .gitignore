@@ -4,3 +4,4 @@ obj/
 *.suo
 .vs/
 openclaw_backup.xml
+%APPDATA%/OpenClaw_Backup/openclaw_backup.xml

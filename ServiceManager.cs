@@ -195,6 +195,10 @@ public static class ServiceManager
 
     private static string GetConfigPath()
     {
-        return Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "openclaw_backup.xml");
+        var appDataDir = Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData);
+        var configDir = Path.Combine(appDataDir, "OpenClaw_Backup");
+        if (!Directory.Exists(configDir))
+            Directory.CreateDirectory(configDir);
+        return Path.Combine(configDir, "openclaw_backup.xml");
     }
 }
