@@ -23,24 +23,30 @@ public class BackupConfig
     /// <summary>保留最近 N 个备份，0 表示不限制</summary>
     public int MaxBackups { get; set; } = 30;
 
-    /// <summary>需要排除的文件扩展名（不含点号），留空则使用默认值</summary>
+    /// <summary>需要排除的文件扩展名（不含点号）</summary>
     [XmlArrayItem("Extension")]
     public List<string> ExcludedExtensions { get; set; } = [];
 
-    /// <summary>需要排除的文件夹名，留空则使用默认值</summary>
+    /// <summary>需要排除的文件夹名</summary>
     [XmlArrayItem("Folder")]
     public List<string> ExcludedFolders { get; set; } = [];
 
-    /// <summary>需要排除的特定文件名，留空则使用默认值</summary>
+    /// <summary>需要排除的特定文件名</summary>
     [XmlArrayItem("File")]
     public List<string> ExcludedFiles { get; set; } = [];
 
-    /// <summary>默认排除的文件扩展名</summary>
-    public static List<string> DefaultExcludedExtensions =>
+    /// <summary>
+    /// 获取最终生效的排除文件夹列表（配置值 + 内置兜底）
+    /// </summary>
+    public List<string> GetEffectiveExtensions() => ExcludedExtensions;
+    public List<string> GetEffectiveFolders() => ExcludedFolders;
+    public List<string> GetEffectiveFiles() => ExcludedFiles;
+
+    /// <summary>内置兜底排除 - 配置文件完全为空时使用</summary>
+    internal static readonly List<string> BuiltinExtensions =
         ["log", "tmp", "pyc", "pyo", "pid", "bak", "swp", "swo", "cache"];
 
-    /// <summary>默认排除的文件夹名</summary>
-    public static List<string> DefaultExcludedFolders =>
+    internal static readonly List<string> BuiltinFolders =
     [
         "tmp", "temp", "backup", "logs", "browser",
         "node_modules", ".git", "__pycache__", ".venv", "venv",
@@ -50,27 +56,31 @@ public class BackupConfig
         "skills-backup", "skills-backup-*",
         ".browser-profile", ".browser_data",
         ".Trash", ".trash", ".clawhub",
+        // 运行时数据 - 可自动重建
+        "flows", "completions", "delivery-queue",
+        ".dreams",
         // 包管理器缓存
         ".npm", ".nuget", ".cargo", ".gradle", ".m2"
     ];
 
-    /// <summary>默认排除的特定文件名</summary>
-    public static List<string> DefaultExcludedFiles =>
+    internal static readonly List<string> BuiltinFiles =
     [
         ".DS_Store", "Thumbs.db", "desktop.ini"
     ];
 
     /// <summary>
-    /// 获取最终生效的排除规则（配置值覆盖默认值）
+    /// 创建包含默认排除规则的完整配置
     /// </summary>
-    public List<string> GetEffectiveExtensions() =>
-        ExcludedExtensions.Count > 0 ? ExcludedExtensions : DefaultExcludedExtensions;
-
-    public List<string> GetEffectiveFolders() =>
-        ExcludedFolders.Count > 0 ? ExcludedFolders : DefaultExcludedFolders;
-
-    public List<string> GetEffectiveFiles() =>
-        ExcludedFiles.Count > 0 ? ExcludedFiles : DefaultExcludedFiles;
+    public static BackupConfig CreateDefault()
+    {
+        var config = new BackupConfig
+        {
+            ExcludedExtensions = new List<string>(BuiltinExtensions),
+            ExcludedFolders = new List<string>(BuiltinFolders),
+            ExcludedFiles = new List<string>(BuiltinFiles)
+        };
+        return config;
+    }
 
     public static BackupConfig Load(string path)
     {
@@ -81,6 +91,14 @@ public class BackupConfig
                 var serializer = new XmlSerializer(typeof(BackupConfig));
                 using var reader = new StreamReader(path);
                 var config = (BackupConfig)serializer.Deserialize(reader)!;
+                // 配置文件中的排除列表为空时，填充默认值
+                if (config.ExcludedExtensions.Count == 0)
+                    config.ExcludedExtensions = new List<string>(BuiltinExtensions);
+                if (config.ExcludedFolders.Count == 0)
+                    config.ExcludedFolders = new List<string>(BuiltinFolders);
+                if (config.ExcludedFiles.Count == 0)
+                    config.ExcludedFiles = new List<string>(BuiltinFiles);
+                config.Save(path);
                 Console.WriteLine($"[INFO] 已加载配置文件: {path}");
                 return config;
             }
@@ -90,7 +108,7 @@ public class BackupConfig
             }
         }
 
-        var defaultConfig = new BackupConfig();
+        var defaultConfig = CreateDefault();
         defaultConfig.Save(path);
         Console.WriteLine($"[INFO] 已创建默认配置文件: {path}");
         return defaultConfig;

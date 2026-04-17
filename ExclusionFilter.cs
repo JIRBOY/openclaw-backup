@@ -13,9 +13,9 @@ public static class ExclusionFilter
     /// </summary>
     public static bool IsExcluded(string filePath, BackupConfig? config)
     {
-        var extensions = config?.GetEffectiveExtensions() ?? BackupConfig.DefaultExcludedExtensions;
-        var folders = config?.GetEffectiveFolders() ?? BackupConfig.DefaultExcludedFolders;
-        var files = config?.GetEffectiveFiles() ?? BackupConfig.DefaultExcludedFiles;
+        var extensions = config?.GetEffectiveExtensions() ?? BackupConfig.BuiltinExtensions;
+        var folders = config?.GetEffectiveFolders() ?? BackupConfig.BuiltinFolders;
+        var files = config?.GetEffectiveFiles() ?? BackupConfig.BuiltinFiles;
 
         var excludedExtensions = new HashSet<string>(extensions, StringComparer.OrdinalIgnoreCase);
         var excludedFolders = new HashSet<string>(folders, StringComparer.OrdinalIgnoreCase);
