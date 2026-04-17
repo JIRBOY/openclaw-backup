@@ -88,9 +88,17 @@ public class BackupConfig
         {
             try
             {
+                BackupConfig? config;
                 var serializer = new XmlSerializer(typeof(BackupConfig));
-                using var reader = new StreamReader(path);
-                var config = (BackupConfig)serializer.Deserialize(reader)!;
+                using (var stream = new FileStream(path, FileMode.Open, FileAccess.Read, FileShare.Read))
+                using (var reader = new StreamReader(stream))
+                {
+                    config = (BackupConfig?)serializer.Deserialize(reader);
+                }
+
+                if (config == null)
+                    throw new InvalidOperationException("配置文件内容为空或格式无效");
+
                 // 配置文件中的排除列表为空时，填充默认值
                 if (config.ExcludedExtensions.Count == 0)
                     config.ExcludedExtensions = new List<string>(BuiltinExtensions);
@@ -98,7 +106,7 @@ public class BackupConfig
                     config.ExcludedFolders = new List<string>(BuiltinFolders);
                 if (config.ExcludedFiles.Count == 0)
                     config.ExcludedFiles = new List<string>(BuiltinFiles);
-                config.Save(path);
+
                 Console.WriteLine($"[INFO] 已加载配置文件: {path}");
                 return config;
             }

@@ -134,6 +134,7 @@ class Program
     /// </summary>
     static List<string> ResolveSourceDirs(BackupConfig config)
     {
+        bool configChanged = false;
         var sourceDirs = new List<string>();
 
         // 配置目录
@@ -145,7 +146,11 @@ class Program
         if (configDir != null)
         {
             sourceDirs.Add(configDir);
-            config.ConfigDirectory = configDir;
+            if (config.ConfigDirectory != configDir)
+            {
+                config.ConfigDirectory = configDir;
+                configChanged = true;
+            }
         }
 
         // 工作空间目录
@@ -157,11 +162,18 @@ class Program
         if (workspaceDir != null)
         {
             sourceDirs.Add(workspaceDir);
-            config.WorkspaceDirectory = workspaceDir;
+            if (config.WorkspaceDirectory != workspaceDir)
+            {
+                config.WorkspaceDirectory = workspaceDir;
+                configChanged = true;
+            }
         }
 
-        // 保存检测到的路径
-        config.Save(GetConfigPath());
+        // 只在配置有变更时才保存
+        if (configChanged)
+        {
+            config.Save(GetConfigPath());
+        }
 
         return sourceDirs;
     }
