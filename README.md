@@ -33,7 +33,7 @@ openclaw_backup.exe --help
 
 ## Configuration
 
-Edit `openclaw_backup.xml` (located in the same directory as the executable):
+Edit `openclaw_backup.xml` (located at `%APPDATA%\OpenClaw_Backup\openclaw_backup.xml`):
 
 ```xml
 <?xml version="1.0" encoding="utf-8"?>
@@ -44,8 +44,52 @@ Edit `openclaw_backup.xml` (located in the same directory as the executable):
   <OutputDirectory>D:\Personal\Archive</OutputDirectory>
   <FileNamePrefix>openclaw-backup</FileNamePrefix>
   <MaxBackups>30</MaxBackups>                  <!-- 0 = unlimited -->
+
+  <!-- 排除规则 - 修改后无需重新编译程序 -->
+  <ExcludedExtensions>
+    <Extension>log</Extension>
+    <Extension>tmp</Extension>
+    <Extension>pyc</Extension>
+    <Extension>pyo</Extension>
+    <Extension>pid</Extension>
+    <Extension>bak</Extension>
+    <Extension>swp</Extension>
+    <Extension>swo</Extension>
+    <Extension>cache</Extension>
+  </ExcludedExtensions>
+  <ExcludedFolders>
+    <Folder>tmp</Folder>
+    <Folder>temp</Folder>
+    <Folder>backup</Folder>
+    <Folder>logs</Folder>
+    <Folder>browser</Folder>
+    <Folder>node_modules</Folder>
+    <Folder>.git</Folder>
+    <Folder>__pycache__</Folder>
+    <Folder>.venv</Folder>
+    <Folder>venv</Folder>
+    <Folder>.next</Folder>
+    <Folder>.cache</Folder>
+    <Folder>dist</Folder>
+    <Folder>build</Folder>
+    <Folder>extensions</Folder>
+    <Folder>agents</Folder>
+    <Folder>tasks</Folder>
+    <!-- OpenClaw 特有 -->
+    <Folder>skills-backup</Folder>
+    <Folder>.browser-profile</Folder>
+    <Folder>.Trash</Folder>
+    <Folder>.clawhub</Folder>
+  </ExcludedFolders>
+  <ExcludedFiles>
+    <File>.DS_Store</File>
+    <File>Thumbs.db</File>
+    <File>desktop.ini</File>
+  </ExcludedFiles>
 </OpenclawBackup>
 ```
+
+**注意：** 留空的排除列表将使用程序内置默认值。如需自定义，添加对应条目即可。支持通配符 `*` 匹配文件夹名（如 `skills-backup-*`）。
 
 ## Output
 
@@ -53,11 +97,15 @@ Backups are saved as `openclaw-backup-YYYYMMDD-HHmmss.tar.gz` containing both so
 
 ## Excluded by Default
 
-**File extensions:** `*.log`, `*.tmp`, `*.pyc`, `*.pyo`, `*.pid`
+**File extensions:** `*.log`, `*.tmp`, `*.pyc`, `*.pyo`, `*.pid`, `*.bak`, `*.swp`, `*.swo`, `*.cache`
 
-**Directories:** `tmp`, `temp`, `backup`, `logs`, `browser`, `node_modules`, `.git`, `__pycache__`, `.venv`, `venv`, `.next`, `.cache`, `dist`, `build`, `extensions`, `agents`, `tasks`
+**Directories:** `tmp`, `temp`, `backup`, `logs`, `browser`, `node_modules`, `.git`, `__pycache__`, `.venv`, `venv`, `.next`, `.cache`, `dist`, `build`, `extensions`, `agents`, `tasks`, `skills-backup`, `.browser-profile`, `.Trash`, `.clawhub`
+
+**Files:** `.DS_Store`, `Thumbs.db`, `desktop.ini`
 
 **Symlinks and junction points** are automatically skipped.
+
+> All exclusion rules are now configurable in `openclaw_backup.xml`. See [Configuration](#configuration) above.
 
 ## Build
 

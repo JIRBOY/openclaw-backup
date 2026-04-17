@@ -24,7 +24,8 @@ public static class BackupRunner
         string outputDir,
         string fileNamePrefix,
         string dateTimeSuffix,
-        bool dryRun = false)
+        bool dryRun = false,
+        BackupConfig? config = null)
     {
         if (!Directory.Exists(outputDir))
             Directory.CreateDirectory(outputDir);
@@ -41,7 +42,7 @@ public static class BackupRunner
         }
 
         var outputFile = Path.Combine(outputDir, $"{fileNamePrefix}-{dateTimeSuffix}.tar.gz");
-        return CreateTarGz(validDirs, outputFile, dryRun);
+        return CreateTarGz(validDirs, outputFile, dryRun, config);
     }
 
     private static string GetDirLabel(string sourceDir)
@@ -58,7 +59,8 @@ public static class BackupRunner
     private static BackupResult CreateTarGz(
         List<string> sourceDirs,
         string outputFile,
-        bool dryRun)
+        bool dryRun,
+        BackupConfig? config = null)
     {
         // Collect all files from all source directories
         var allFiles = new List<string>();
@@ -75,7 +77,7 @@ public static class BackupRunner
 
             foreach (var filePath in Directory.EnumerateFiles(sourceDir, "*", enumOptions))
             {
-                if (ExclusionFilter.IsExcluded(filePath))
+                if (ExclusionFilter.IsExcluded(filePath, config))
                     continue;
 
                 if (HasSymlinkInPath(filePath, sourceDir))

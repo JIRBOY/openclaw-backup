@@ -44,7 +44,7 @@ class Program
             Console.WriteLine("=== 模拟运行模式 ===");
             Console.WriteLine();
             BackupRunner.Run(sourceDirs, config.OutputDirectory,
-                config.FileNamePrefix, DateTime.Now.ToString("yyyyMMdd-HHmmss"), dryRun: true);
+                config.FileNamePrefix, DateTime.Now.ToString("yyyyMMdd-HHmmss"), dryRun: true, config: config);
             return 0;
         }
 
@@ -78,7 +78,7 @@ class Program
     {
         // 第一次尝试
         var result = BackupRunner.Run(sourceDirs, config.OutputDirectory,
-            config.FileNamePrefix, dateTimeSuffix);
+            config.FileNamePrefix, dateTimeSuffix, config: config);
 
         if (result.Success)
             return result;
@@ -110,7 +110,7 @@ class Program
             // 重试备份
             Console.WriteLine("[INFO] 重试备份...");
             result = BackupRunner.Run(sourceDirs, config.OutputDirectory,
-                config.FileNamePrefix, dateTimeSuffix);
+                config.FileNamePrefix, dateTimeSuffix, config: config);
         }
         catch (Exception ex)
         {

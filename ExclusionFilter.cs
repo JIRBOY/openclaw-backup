@@ -2,41 +2,35 @@ namespace OpenclawBackup;
 
 public static class ExclusionFilter
 {
-    /// <summary>需要排除的文件扩展名</summary>
-    private static readonly HashSet<string> ExcludedExtensions = new(StringComparer.OrdinalIgnoreCase)
-    {
-        ".log", ".tmp", ".pyc", ".pyo", ".pid"
-    };
-
-    /// <summary>需要排除的文件夹名</summary>
-    private static readonly HashSet<string> ExcludedFolders = new(StringComparer.OrdinalIgnoreCase)
-    {
-        "tmp", "temp", "backup", "logs", "browser",
-        "node_modules", ".git", "__pycache__", ".venv", "venv",
-        ".next", ".cache", "dist", "build",
-        "extensions", "agents", "tasks"
-    };
-
-    /// <summary>需要排除的特定文件名</summary>
-    private static readonly HashSet<string> ExcludedFiles = new(StringComparer.OrdinalIgnoreCase)
-    {
-        ".DS_Store", "Thumbs.db", "desktop.ini"
-    };
+    /// <summary>
+    /// 判断单个文件是否应被排除（使用默认规则）
+    /// </summary>
+    public static bool IsExcluded(string filePath) =>
+        IsExcluded(filePath, null);
 
     /// <summary>
-    /// 判断单个文件是否应被排除
+    /// 判断单个文件是否应被排除（使用配置规则）
     /// </summary>
-    public static bool IsExcluded(string filePath)
+    public static bool IsExcluded(string filePath, BackupConfig? config)
     {
+        var extensions = config?.GetEffectiveExtensions() ?? BackupConfig.DefaultExcludedExtensions;
+        var folders = config?.GetEffectiveFolders() ?? BackupConfig.DefaultExcludedFolders;
+        var files = config?.GetEffectiveFiles() ?? BackupConfig.DefaultExcludedFiles;
+
+        var excludedExtensions = new HashSet<string>(extensions, StringComparer.OrdinalIgnoreCase);
+        var excludedFolders = new HashSet<string>(folders, StringComparer.OrdinalIgnoreCase);
+        var excludedFiles = new HashSet<string>(files, StringComparer.OrdinalIgnoreCase);
+
         var fileName = Path.GetFileName(filePath);
         var ext = Path.GetExtension(fileName);
         var nameLower = fileName.ToLowerInvariant();
 
-        // 检查扩展名
-        if (ExcludedExtensions.Contains(ext))
+        // 去掉开头的点号后检查扩展名（如 .log, .tmp）
+        var extNoDot = ext.TrimStart('.');
+        if (!string.IsNullOrEmpty(extNoDot) && excludedExtensions.Contains(extNoDot))
             return true;
 
-        // 检查 .tmp 临时文件变体（如 main.sqlite.tmp-abc123）
+        // 检查 .tmp 变体（如 main.sqlite.tmp-abc123）
         if (nameLower.Contains(".tmp"))
             return true;
 
@@ -45,17 +39,62 @@ public static class ExclusionFilter
             return true;
 
         // 检查特定文件名
-        if (ExcludedFiles.Contains(fileName))
+        if (excludedFiles.Contains(fileName))
             return true;
 
-        // 检查路径中是否包含排除的文件夹
+        // 检查路径中是否包含排除的文件夹（支持通配符 *）
         var parts = filePath.Split(Path.DirectorySeparatorChar, Path.AltDirectorySeparatorChar);
         foreach (var part in parts)
         {
-            if (ExcludedFolders.Contains(part))
+            if (MatchesExclusion(part, excludedFolders))
                 return true;
         }
 
+        return false;
+    }
+
+    /// <summary>
+    /// 匹配排除规则，支持简单的通配符 * 匹配
+    /// </summary>
+    private static bool MatchesExclusion(string name, HashSet<string> patterns)
+    {
+        foreach (var pattern in patterns)
+        {
+            if (pattern.Contains('*'))
+            {
+                // 简单通配符匹配
+                if (WildCardMatch(name, pattern))
+                    return true;
+            }
+            else if (patterns.Contains(name))
+            {
+                return true;
+            }
+        }
+        return false;
+    }
+
+    /// <summary>
+    /// 简单通配符匹配（仅支持 *）
+    /// </summary>
+    private static bool WildCardMatch(string text, string pattern)
+    {
+        var parts = pattern.Split('*', StringSplitOptions.RemoveEmptyEntries);
+        if (pattern.StartsWith('*') && pattern.EndsWith('*'))
+        {
+            // *xxx* - 包含
+            return parts.Any(p => text.Contains(p, StringComparison.OrdinalIgnoreCase));
+        }
+        if (pattern.StartsWith('*'))
+        {
+            // *xxx - 结尾匹配
+            return text.EndsWith(parts[0], StringComparison.OrdinalIgnoreCase);
+        }
+        if (pattern.EndsWith('*'))
+        {
+            // xxx* - 开头匹配
+            return text.StartsWith(parts[0], StringComparison.OrdinalIgnoreCase);
+        }
         return false;
     }
 
@@ -78,7 +117,7 @@ public static class ExclusionFilter
     /// <summary>
     /// 获取应备份的文件列表（用于 dry-run）
     /// </summary>
-    public static List<string> GetFilesToBackup(IEnumerable<string> sourceDirs)
+    public static List<string> GetFilesToBackup(IEnumerable<string> sourceDirs, BackupConfig? config = null)
     {
         var result = new List<string>();
 
@@ -88,7 +127,6 @@ public static class ExclusionFilter
 
             try
             {
-                // 跳过符号链接
                 var enumOptions = new EnumerationOptions
                 {
                     RecurseSubdirectories = true,
@@ -99,7 +137,7 @@ public static class ExclusionFilter
                 var files = Directory.EnumerateFiles(sourceDir, "*", enumOptions);
                 foreach (var file in files)
                 {
-                    if (!IsExcluded(file) && !HasSymlinkInPath(file, sourceDir))
+                    if (!IsExcluded(file, config) && !HasSymlinkInPath(file, sourceDir))
                         result.Add(file);
                 }
             }

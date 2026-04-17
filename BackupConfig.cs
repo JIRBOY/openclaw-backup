@@ -23,6 +23,55 @@ public class BackupConfig
     /// <summary>保留最近 N 个备份，0 表示不限制</summary>
     public int MaxBackups { get; set; } = 30;
 
+    /// <summary>需要排除的文件扩展名（不含点号），留空则使用默认值</summary>
+    [XmlArrayItem("Extension")]
+    public List<string> ExcludedExtensions { get; set; } = [];
+
+    /// <summary>需要排除的文件夹名，留空则使用默认值</summary>
+    [XmlArrayItem("Folder")]
+    public List<string> ExcludedFolders { get; set; } = [];
+
+    /// <summary>需要排除的特定文件名，留空则使用默认值</summary>
+    [XmlArrayItem("File")]
+    public List<string> ExcludedFiles { get; set; } = [];
+
+    /// <summary>默认排除的文件扩展名</summary>
+    public static List<string> DefaultExcludedExtensions =>
+        ["log", "tmp", "pyc", "pyo", "pid", "bak", "swp", "swo", "cache"];
+
+    /// <summary>默认排除的文件夹名</summary>
+    public static List<string> DefaultExcludedFolders =>
+    [
+        "tmp", "temp", "backup", "logs", "browser",
+        "node_modules", ".git", "__pycache__", ".venv", "venv",
+        ".next", ".cache", "dist", "build",
+        "extensions", "agents", "tasks",
+        // OpenClaw 特有 - 冗余备份和浏览器缓存
+        "skills-backup", "skills-backup-*",
+        ".browser-profile", ".browser_data",
+        ".Trash", ".trash", ".clawhub",
+        // 包管理器缓存
+        ".npm", ".nuget", ".cargo", ".gradle", ".m2"
+    ];
+
+    /// <summary>默认排除的特定文件名</summary>
+    public static List<string> DefaultExcludedFiles =>
+    [
+        ".DS_Store", "Thumbs.db", "desktop.ini"
+    ];
+
+    /// <summary>
+    /// 获取最终生效的排除规则（配置值覆盖默认值）
+    /// </summary>
+    public List<string> GetEffectiveExtensions() =>
+        ExcludedExtensions.Count > 0 ? ExcludedExtensions : DefaultExcludedExtensions;
+
+    public List<string> GetEffectiveFolders() =>
+        ExcludedFolders.Count > 0 ? ExcludedFolders : DefaultExcludedFolders;
+
+    public List<string> GetEffectiveFiles() =>
+        ExcludedFiles.Count > 0 ? ExcludedFiles : DefaultExcludedFiles;
+
     public static BackupConfig Load(string path)
     {
         if (File.Exists(path))
