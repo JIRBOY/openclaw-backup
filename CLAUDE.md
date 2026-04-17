@@ -21,13 +21,17 @@
 
 ## 排除规则
 
-备份时排除以下文件和文件夹：
+备份时排除以下文件和文件夹（**可在 openclaw_backup.xml 中自定义**）：
 
-**文件扩展名：** `*.log`, `*.tmp`, `*.pyc`, `*.pyo`, `*.pid`
+**文件扩展名：** `*.log`, `*.tmp`, `*.pyc`, `*.pyo`, `*.pid`, `*.bak`, `*.swp`, `*.swo`, `*.cache`
 
-**文件夹名：** `tmp`, `temp`, `backup`, `logs`, `browser`, `node_modules`, `.git`, `__pycache__`, `.venv`, `venv`, `.next`, `.cache`, `.DS_Store`, `Thumbs.db`, `desktop.ini`, `dist`, `build`, `extensions`, `agents`, `tasks`
+**文件夹名：** `tmp`, `temp`, `backup`, `logs`, `browser`, `node_modules`, `.git`, `__pycache__`, `.venv`, `venv`, `.next`, `.cache`, `dist`, `build`, `extensions`, `agents`, `tasks`, `skills-backup`, `skills-backup-*`, `.browser-profile`, `.browser_data`, `.Trash`, `.trash`, `.clawhub`, `.npm`, `.nuget`, `.cargo`, `.gradle`, `.m2`
+
+**特定文件名：** `.DS_Store`, `Thumbs.db`, `desktop.ini`
 
 **符号链接/联接点：** 自动跳过（`EnumerationOptions.AttributesToSkip = FileAttributes.ReparsePoint`）
+
+排除规则支持通配符 `*` 匹配文件夹名，留空时使用程序内置默认值。
 
 ## 项目结构
 
@@ -57,6 +61,21 @@ D:\Personal\Github\Openclaw_Backup\
   <OutputDirectory>D:\Personal\Archive</OutputDirectory>
   <FileNamePrefix>openclaw-backup</FileNamePrefix>
   <MaxBackups>30</MaxBackups>                  <!-- 保留最近 N 个，0=不限制 -->
+  <!-- 以下排除规则留空时使用程序内置默认值 -->
+  <ExcludedExtensions>
+    <Extension>log</Extension>
+    <Extension>tmp</Extension>
+    <!-- ... 更多扩展名 ... -->
+  </ExcludedExtensions>
+  <ExcludedFolders>
+    <Folder>tmp</Folder>
+    <Folder>skills-backup</Folder>
+    <!-- ... 更多文件夹 ... -->
+  </ExcludedFolders>
+  <ExcludedFiles>
+    <File>.DS_Store</File>
+    <!-- ... 更多文件名 ... -->
+  </ExcludedFiles>
 </OpenclawBackup>
 ```
 
